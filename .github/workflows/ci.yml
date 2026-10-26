@@ -1,0 +1,25 @@
+name: Synthetic memory regression
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run isolated memory test
+        env:
+          PYTHONPATH: memory
+        run: python tests/test_lean_workflow.py
+      - name: Reject forbidden published artifacts
+        shell: bash
+        run: |
+          if git ls-files | grep -Ei "(\\.sqlite3?$|\\.db$|\\.env$|\\.pem$|\\.pfx$|\\.key$|(^|/)logs/|(^|/)secrets/)"; then
+            echo "Forbidden tracked artifact"
+            exit 1
+          fi
