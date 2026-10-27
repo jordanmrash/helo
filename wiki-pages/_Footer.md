@@ -1,0 +1,1 @@
+Public reference documentation. Synthetic checks do not establish live operation. [Source revision](https://github.com/jordanmrash/helo/tree/875323865625413d839cc771bf6641320b56b0a3) | [Evidence limits](Evidence-and-Limitations)
