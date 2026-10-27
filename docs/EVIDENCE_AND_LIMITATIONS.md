@@ -15,3 +15,10 @@ The available unauthenticated execution bridge did not establish verifiable Helo
 
 ## Disclosure policy
 Only synthetic test inputs and sanitized code are publishable. Never commit production databases, conversations, operation records, tokens, tunnel endpoints or organization-specific settings.
+
+
+## Source-review caveats for this public upgrade
+
+The receipt validator checks identity labels but does not cryptographically authenticate them. It accepts operation-completion fields without independently establishing a task outcome. Hashing receipt bytes establishes consistency, not producer trust. The test creates synthetic receipts and redirects the base database into a temporary directory; its production wording is not a live production inspection.
+
+The base initializer does not create every evidence/index table required by the lean workflow. The test adds those tables explicitly. Complete initialization, authenticated integration and independent outcome verification remain unresolved. The new example and release gate preserve these limitations rather than treating a green test as production readiness.

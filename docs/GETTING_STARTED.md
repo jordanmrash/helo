@@ -1,9 +1,21 @@
 # Getting started
 
-This repository is a sanitized memory reference implementation, not a complete installable Microsoft 365 agent. Python 3.11 and the standard library are sufficient for the included test.
+## Public reference, not agent installation
 
-## Test the reference implementation
-From the repository root, run:
+Use Python 3.11 and a fresh checkout. The included code uses the standard library. No tenant, tunnel, connector or signed-in browser is required for the synthetic run. This checkout does not install a live declarative agent.
+
+## One-command run
+
+```sh
+python examples/learning-cycle/run.py
+python scripts/release_check.py
+```
+
+The runner sets the module search path locally, executes the existing regression script and preserves assertion failures. It uses temporary synthetic databases. No environment-wide PYTHONPATH change is needed.
+
+## Direct regression run
+
+On PowerShell:
 
 ```powershell
 $env:PYTHONPATH="memory"
@@ -16,10 +28,8 @@ On macOS/Linux:
 PYTHONPATH=memory python3 tests/test_lean_workflow.py
 ```
 
-The test uses temporary synthetic evidence. It must not connect to or copy a production SQLite database.
+The test prints named aggregate outcomes and exits nonzero if an assertion fails. Its wording about production refers to its isolated test guard, not inspection of an actual production database.
 
-## Integrating with an agent
-Provide a separately authorized tool boundary for read-only retrieval, evidence-gated lesson recording, and application feedback. Keep credentials, private manifests, tenant identifiers, local paths, and production memory outside this repository. Do not assume that a declarative agent identity is authenticated merely because it is included in a request.
+## Before integrating
 
-## What is not supplied
-No deployable MCP gateway, Microsoft 365 plugin manifest, cloud authentication configuration, live agent instructions, or real session records are shipped. A Microsoft 365 host can provide native capabilities separately.
+Read [API contracts](API_REFERENCE.md) and [limitations](EVIDENCE_AND_LIMITATIONS.md). The base initializer does not create every table required by the lean workflow; the shipped test adds evidence and exact-index tables explicitly. There is no complete production migration or authenticated gateway here. Do not use a live database to fill that gap.
