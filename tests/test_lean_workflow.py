@@ -1,7 +1,8 @@
-import tempfile,pathlib,sqlite3,json,hashlib
+import tempfile,pathlib,sqlite3,json,hashlib,sys
 import helo_memory as b,exact_retrieval as x,lean_workflow as w
 import atexit
-_test_db_directory=tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+_TMP_KWARGS={"ignore_cleanup_errors":True} if sys.version_info>=(3,12) else {}
+_test_db_directory=tempfile.TemporaryDirectory(**_TMP_KWARGS)
 atexit.register(_test_db_directory.cleanup)
 b.DB=pathlib.Path(_test_db_directory.name)/"test_memory.sqlite3"
 b.initialize()
@@ -10,7 +11,7 @@ with sqlite3.connect(str(b.DB)) as _schema_db:
     _schema_db.execute("CREATE TABLE IF NOT EXISTS lesson_index (lesson_id INTEGER NOT NULL, agent_id TEXT NOT NULL, scope TEXT NOT NULL, problem_signature TEXT NOT NULL, compatibility_contract TEXT NOT NULL, applicability TEXT NOT NULL, exceptions TEXT NOT NULL, FOREIGN KEY(lesson_id) REFERENCES lessons(id))")
     _schema_db.execute("CREATE INDEX IF NOT EXISTS idx_helo_exact ON lesson_index(agent_id,scope,problem_signature,compatibility_contract,applicability,exceptions)")
 assert b.status()["memories"]==0 and b.status()["lessons"]==0
-with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
+with tempfile.TemporaryDirectory(**_TMP_KWARGS) as d:
     root=pathlib.Path(d);db=root/"isolated.sqlite3"
     with sqlite3.connect(str(b.DB)) as src,sqlite3.connect(str(db)) as dst: src.backup(dst)
     def receipt(name,identity="Helo",status="COMPLETED"):

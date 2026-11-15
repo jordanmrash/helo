@@ -13,7 +13,7 @@ A lean, evidence-gated memory and procedural-lessons reference implementation fo
 - Production authentication: live autonomous lesson activation remains disabled until independently verified caller attribution and task outcomes exist.
 
 ## Local synthetic test
-Run `python tests/test_lean_workflow.py` from a working environment where the `memory` folder is on PYTHONPATH. The test uses temporary files and must never import a production database.
+Run `python tests/test_lean_workflow.py` from a working environment where the `memory` folder is on PYTHONPATH. Works on Python 3.9 or newer (the `ignore_cleanup_errors` temporary-directory flag is used on Python 3.12+ and omitted on earlier versions). The test uses temporary files and must never import a production database.
 
 ## Design principles
 One SQLite store, exact matching, evidence-first promotion, duplicate and replay rejection, bounded recall, feedback-based suspension, and no inherited ACL/AoR memories.
