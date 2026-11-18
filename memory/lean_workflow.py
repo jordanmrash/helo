@@ -1,5 +1,6 @@
 import json,sqlite3,pathlib,hashlib,datetime,hmac,os
 import helo_memory as b
+import receipt_auth
 import exact_retrieval as x
 FIELDS=x.FIELDS
 def hashfile(p):
@@ -12,15 +13,7 @@ def validate_8938(ref,root,expected_agent="Helo"):
     path=pathlib.Path(ref).resolve(strict=True)
     if not path.is_relative_to(base) or path.suffix.lower()!=".json": raise ValueError("FOREIGN_PATH")
     rec=json.loads(path.read_text(encoding="utf-8"))
-    key_hex=os.environ.get("HELO_RECEIPT_HMAC_KEY_HEX","")
-    try: key=bytes.fromhex(key_hex)
-    except ValueError: raise ValueError("RECEIPT_AUTH_KEY_INVALID")
-    if len(key)<32: raise ValueError("RECEIPT_AUTH_KEY_REQUIRED")
-    supplied=rec.get("receipt_hmac_sha256","")
-    signed={k:v for k,v in rec.items() if k!="receipt_hmac_sha256"}
-    canonical=json.dumps(signed,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode("utf-8")
-    expected=hmac.new(key,canonical,hashlib.sha256).hexdigest()
-    if not isinstance(supplied,str) or not hmac.compare_digest(supplied,expected): raise ValueError("RECEIPT_AUTHENTICATION_FAILED")
+    receipt_auth.verify(rec)
     if rec.get("tool") not in ("run_job","run_batch_file") or rec.get("status")!="COMPLETED" or rec.get("exit_code")!=0 or rec.get("timed_out") is not False: raise ValueError("INVALID_8938_OPERATION")
     if not rec.get("op_id") or not rec.get("script") or not rec.get("sha256_run"): raise ValueError("INCOMPLETE_8938_OPERATION")
     # An operation prefix or filename is not proof of the initiating agent.

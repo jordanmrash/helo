@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "helo-memory-reference"
+version = "0.2.0"
+requires-python = ">=3.11"
+dependencies = ["cryptography>=44,<47"]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = []

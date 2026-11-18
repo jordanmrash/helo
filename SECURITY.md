@@ -17,3 +17,7 @@ HMAC proves possession of the shared key, not independent non-repudiation. Deplo
 The database opener rejects symbolic links and Windows reparse points for both the database and its parent directory. Read-only consumers use SQLite URI mode=ro plus PRAGMA query_only=ON. On POSIX, new databases are restricted to mode 0600 and existing databases with group or other permissions fail closed.
 
 Windows deployments must additionally restrict the database directory and file to the dedicated Helo service identity and administrators with NTFS ACLs, verify the effective ACL during provisioning, and use BitLocker for volume encryption. Python chmod is not a complete Windows authorization boundary. Use SQLCipher or a managed encrypted database when application-layer encryption is required.
+
+## Implemented deployment controls
+
+Receipts support Ed25519 signatures with pinned public keys in HELO_RECEIPT_ED25519_PUBLIC_KEYS_JSON. Helo never needs the private signing key. HMAC deployments support rotation through HELO_RECEIPT_HMAC_KEYS_JSON and signing_key_id. scripts/new-protected-receipt-key.ps1 creates a machine-scoped DPAPI-protected key file with restricted ACLs. scripts/protect-windows-storage.ps1 provisions and verifies NTFS ACLs for a dedicated service identity. GitHub Actions run regression, Bandit, Gitleaks, generated-artifact rejection, and CodeQL. Repository policy requires protected main, pull requests, approving review, passing checks, resolved conversations, no force pushes, no deletion, and signed commits.

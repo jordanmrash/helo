@@ -1,0 +1,28 @@
+name: security
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  security-events: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install . bandit
+      - run: python -m py_compile memory/*.py tests/*.py
+      - run: PYTHONPATH=memory python tests/test_lean_workflow.py
+      - run: bandit -r memory -lll -iii
+      - name: Reject generated artifacts
+        run: test -z "$(git ls-files | grep -E '(\.sqlite3|\.db|\.pyc|__pycache__)' || true)"
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
