@@ -38,7 +38,7 @@ def record_lesson(d,db=None,record_root=None):
         if failure["op_id"]==correction["op_id"]: raise ValueError("SAME_OPERATION")
         payload=json.dumps({"failure":failure,"correction":correction},sort_keys=True,separators=(",",":"))
         h=hashlib.sha256(payload.encode()).hexdigest();eid="helo:"+h
-        with sqlite3.connect(str(db),timeout=5) as c:
+        with b.connect(db) as c:
             c.execute("PRAGMA foreign_keys=ON");c.execute("BEGIN IMMEDIATE")
             if c.execute("SELECT agent FROM identity").fetchone()[0]!="helo": raise ValueError("FOREIGN_DATABASE")
             query="SELECT COUNT(*) FROM lesson_index x JOIN lessons l ON x.lesson_id=l.id WHERE "+" AND ".join("x."+k+"=?" for k in FIELDS)+" AND l.status='active'"
@@ -58,7 +58,7 @@ def record_application(d,db=None,record_root=None):
     try:
         rec=validate_8938(d["evidence_ref"],record_root)
         if rec["op_id"]!=d["operation_id"]: raise ValueError("OPERATION_MISMATCH")
-        with sqlite3.connect(str(db),timeout=5) as c:
+        with b.connect(db) as c:
             c.execute("BEGIN IMMEDIATE")
             lid=int(d["lesson_id"]);row=c.execute("SELECT failures,status FROM lessons WHERE id=? AND agent='helo'",(lid,)).fetchone()
             if not row: raise ValueError("LESSON_NOT_FOUND")

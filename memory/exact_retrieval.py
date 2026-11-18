@@ -5,9 +5,7 @@ def lookup(criteria, db=None):
     if type(criteria) is not dict or set(criteria)!=set(FIELDS): raise ValueError("invalid query fields")
     if criteria.get("agent_id")!="Helo" or any(type(criteria[k]) is not str or not 0<len(criteria[k])<=256 for k in FIELDS): raise ValueError("invalid Helo query")
     path=pathlib.Path(db) if db is not None else base.DB
-    uri="file:"+path.resolve().as_posix()+"?mode=ro"
-    with sqlite3.connect(uri,uri=True,timeout=3) as c:
-        c.execute("PRAGMA query_only=ON")
+    with base.connect(path,readonly=True) as c:
         c.execute("PRAGMA foreign_keys=ON")
         row=c.execute("SELECT l.id,l.content,l.evidence_ref,e.payload,e.payload_sha256 FROM lesson_index x INDEXED BY idx_helo_exact JOIN lessons l ON l.id=x.lesson_id JOIN evidence e ON e.id=l.evidence_ref WHERE x.agent_id=? AND x.scope=? AND x.problem_signature=? AND x.compatibility_contract=? AND x.applicability=? AND x.exceptions=? AND l.agent='helo' AND l.status='active' AND e.agent='helo' AND e.source='helo_runtime' AND e.outcome='verified_correction' LIMIT 2",tuple(criteria[k] for k in FIELDS)).fetchall()
         valid=[r for r in row if hashlib.sha256(r[3].encode()).hexdigest()==r[4]]

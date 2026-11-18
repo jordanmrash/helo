@@ -1,9 +1,30 @@
-import sqlite3, pathlib, datetime, json
+import sqlite3, pathlib, datetime, json, os, stat
 ROOT = pathlib.Path(__file__).resolve().parent
 DB = ROOT / "helo_memory.sqlite3"
 AGENT = "helo"
-def connect():
-    c=sqlite3.connect(str(DB))
+def _reject_unsafe_path(path):
+    p=pathlib.Path(path)
+    for candidate in (p.parent,p):
+        if candidate.exists():
+            info=candidate.lstat()
+            if stat.S_ISLNK(info.st_mode) or bool(getattr(info,"st_file_attributes",0) & 0x400): raise RuntimeError("UNSAFE_DATABASE_PATH")
+    return p.resolve(strict=False)
+def _restrict_permissions(path):
+    if os.name=="posix":
+        os.chmod(path,0o600)
+        if stat.S_IMODE(path.stat().st_mode) & 0o077: raise RuntimeError("INSECURE_DATABASE_PERMISSIONS")
+def connect(path=DB,readonly=False):
+    p=_reject_unsafe_path(path)
+    if readonly:
+        if not p.exists(): raise RuntimeError("DATABASE_NOT_FOUND")
+        c=sqlite3.connect(f"file:{p.as_posix()}?mode=ro",uri=True,timeout=3)
+        c.execute("PRAGMA query_only=ON")
+    else:
+        existed=p.exists()
+        c=sqlite3.connect(str(p),timeout=5)
+        if not existed: _restrict_permissions(p)
+        elif os.name=="posix" and stat.S_IMODE(p.stat().st_mode) & 0o077:
+            c.close();raise RuntimeError("INSECURE_DATABASE_PERMISSIONS")
     c.execute("PRAGMA foreign_keys=ON")
     return c
 def initialize():

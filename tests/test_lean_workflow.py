@@ -34,6 +34,19 @@ with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
     assert x.lookup(q,db) is None
     assert w.record_application({"agent_id":"Helo","lesson_id":str(lid),"operation_id":"helo-failtwo","outcome":"verified_failure","evidence_ref":path},db,root)["status"]=="REJECTED"
     with sqlite3.connect(str(db)) as c: assert c.execute("PRAGMA integrity_check").fetchone()[0]=="ok"
+    unsafe=root/"unsafe.sqlite3";unsafe.write_bytes(b"")
+    if os.name=="posix":
+        unsafe.chmod(0o644)
+        try: b.connect(unsafe);assert False,"permissive database accepted"
+        except RuntimeError as e: assert str(e)=="INSECURE_DATABASE_PERMISSIONS"
+        unsafe.chmod(0o600)
+    target=root/"target.sqlite3";target.write_bytes(b"")
+    link=root/"linked.sqlite3"
+    try:
+        link.symlink_to(target)
+        try: b.connect(link);assert False,"symlink database accepted"
+        except RuntimeError as e: assert str(e)=="UNSAFE_DATABASE_PATH"
+    except (OSError,NotImplementedError): pass
     print("PASS isolated write, retrieval, duplicate rejection, foreign identity rejection, feedback, suspension, replay rejection")
 assert b.status()["memories"]==0 and b.status()["lessons"]==0
 print("PASS production remains blank; production writes blocked")
