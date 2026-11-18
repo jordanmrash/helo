@@ -9,6 +9,7 @@ with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
     assert b.status(seed)["memories"]==0 and b.status(seed)["lessons"]==0
     db=root/"isolated.sqlite3"
     with sqlite3.connect(str(seed)) as src,sqlite3.connect(str(db)) as dst: src.backup(dst)
+    if os.name=="posix": db.chmod(0o600)
     def receipt(name,identity="Helo",status="COMPLETED"):
         p=root/(name+".json")
         rec={"tool":"run_job","status":status,"exit_code":0,"timed_out":False,"op_id":"helo-"+name,"script":"approved.ps1","sha256_run":"a"*64,"authenticated_agent_id":identity,"identity_verified_by":"8938"}
