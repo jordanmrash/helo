@@ -27,9 +27,10 @@ def connect(path=DB,readonly=False):
             c.close();raise RuntimeError("INSECURE_DATABASE_PERMISSIONS")
     c.execute("PRAGMA foreign_keys=ON")
     return c
-def initialize():
-    if DB.exists(): raise RuntimeError("Refusing to initialize existing memory database")
-    with connect() as c:
+def initialize(path=DB):
+    path=pathlib.Path(path)
+    if path.exists(): raise RuntimeError("Refusing to initialize existing memory database")
+    with connect(path) as c:
         c.execute("CREATE TABLE identity (agent TEXT PRIMARY KEY CHECK(agent = 'helo'), schema_version INTEGER NOT NULL)")
         c.execute("INSERT INTO identity VALUES (?,?)", (AGENT,1))
         c.execute("CREATE TABLE memories (id INTEGER PRIMARY KEY, agent TEXT NOT NULL CHECK(agent = 'helo'), content TEXT NOT NULL, evidence_ref TEXT NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY(agent) REFERENCES identity(agent))")
@@ -39,8 +40,8 @@ def initialize():
         c.execute("CREATE INDEX idx_helo_exact ON lesson_index(agent_id,scope,problem_signature,compatibility_contract,applicability,exceptions)")
         c.execute("CREATE TRIGGER no_import_memories BEFORE INSERT ON memories WHEN NEW.evidence_ref NOT LIKE 'helo:%' BEGIN SELECT RAISE(ABORT,'Helo evidence required'); END")
         c.execute("CREATE TRIGGER no_import_lessons BEFORE INSERT ON lessons WHEN NEW.evidence_ref NOT LIKE 'helo:%' BEGIN SELECT RAISE(ABORT,'Helo evidence required'); END")
-def status():
-    with connect() as c:
+def status(path=DB):
+    with connect(path) as c:
         return {"agent":c.execute("SELECT agent FROM identity").fetchone()[0], "memories":c.execute("SELECT COUNT(*) FROM memories").fetchone()[0], "lessons":c.execute("SELECT COUNT(*) FROM lessons").fetchone()[0], "integrity":c.execute("PRAGMA integrity_check").fetchone()[0]}
 if __name__ == "__main__":
     initialize()

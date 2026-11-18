@@ -1,13 +1,14 @@
 import tempfile,pathlib,sqlite3,json,hashlib,hmac,os
 import helo_memory as b,exact_retrieval as x,lean_workflow as w
-if b.DB.exists(): b.DB.unlink()
-b.initialize()
-assert b.status()["memories"]==0 and b.status()["lessons"]==0
 KEY=bytes.fromhex("11"*32)
 os.environ["HELO_RECEIPT_HMAC_KEY_HEX"]=KEY.hex()
 with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
-    root=pathlib.Path(d);db=root/"isolated.sqlite3"
-    with sqlite3.connect(str(b.DB)) as src,sqlite3.connect(str(db)) as dst: src.backup(dst)
+    root=pathlib.Path(d)
+    seed=root/"seed.sqlite3"
+    b.initialize(seed)
+    assert b.status(seed)["memories"]==0 and b.status(seed)["lessons"]==0
+    db=root/"isolated.sqlite3"
+    with sqlite3.connect(str(seed)) as src,sqlite3.connect(str(db)) as dst: src.backup(dst)
     def receipt(name,identity="Helo",status="COMPLETED"):
         p=root/(name+".json")
         rec={"tool":"run_job","status":status,"exit_code":0,"timed_out":False,"op_id":"helo-"+name,"script":"approved.ps1","sha256_run":"a"*64,"authenticated_agent_id":identity,"identity_verified_by":"8938"}
@@ -48,5 +49,5 @@ with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as d:
         except RuntimeError as e: assert str(e)=="UNSAFE_DATABASE_PATH"
     except (OSError,NotImplementedError): pass
     print("PASS isolated write, retrieval, duplicate rejection, foreign identity rejection, feedback, suspension, replay rejection")
-assert b.status()["memories"]==0 and b.status()["lessons"]==0
-print("PASS production remains blank; production writes blocked")
+    assert b.status(seed)["memories"]==0 and b.status(seed)["lessons"]==0
+    print("PASS temporary seed remains blank; non-test writes blocked")
